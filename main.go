@@ -31,8 +31,8 @@ func init() {
 	signal.Notify(signal_queue, syscall.SIGINT)
 	go func() {
 		sig := <-signal_queue
-		logger.Debugf("caught sig: %+v", sig)
-		logger.Info("Gracefully shutting down...")
+		logger.Warnf("caught sig: %+v", sig)
+		logger.Warn("Gracefully shutting down...")
 		c := 10
 		for {
 			if 0 == TCP_SERVER.GetNumClients() || c == 0 {
@@ -43,11 +43,12 @@ func init() {
 			time.Sleep(1 * time.Second)
 			c--
 		}
-		logger.Debug("Closing tcp clients...")
+		logger.Warn("Closing tcp clients...")
 		TCP_SERVER.Shutdown()
-		logger.Debug("Closing database connection...")
+		time.Sleep(1 * time.Second)
+		logger.Warn("Closing database connection...")
 		DB.Close()
-		logger.Debug("Shutting down...")
+		logger.Warn("Shutting down...")
 		time.Sleep(1 * time.Second)
 		os.Exit(0)
 	}()
