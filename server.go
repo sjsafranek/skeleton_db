@@ -57,6 +57,14 @@ func RunTcpServer() {
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
+	// Returns runtime and system information
+	TCP_SERVER.RegisterMethod("num_clients", func(message socket2em.Message, conn net.Conn) {
+		// {"method": "num_clients"}
+		results := make(map[string]interface{})
+		results["num_clients"] = TCP_SERVER.GetNumClients()
+		TCP_SERVER.SendResponseFromStruct(results, conn)
+	})
+
 	// Get keys
 	TCP_SERVER.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "keys"}

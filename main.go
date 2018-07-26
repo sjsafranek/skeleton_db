@@ -3,6 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/sjsafranek/gopass/lib"
 	"github.com/sjsafranek/ligneous"
@@ -21,6 +25,32 @@ func init() {
 	// get command line args
 	flag.StringVar(&DB_FILE, "db", DEFAULT_DB_FILE, "database file")
 	flag.Parse()
+
+	signal_queue := make(chan os.Signal)
+	signal.Notify(signal_queue, syscall.SIGTERM)
+	signal.Notify(signal_queue, syscall.SIGINT)
+	go func() {
+		sig := <-signal_queue
+		logger.Debugf("caught sig: %+v", sig)
+		logger.Info("Gracefully shutting down...")
+		c := 10
+		for {
+			if 0 == TCP_SERVER.GetNumClients() || c == 0 {
+				break
+			}
+			logger.Debug("Waiting for clients to close")
+			TCP_SERVER.Broadcast(fmt.Sprintf("server is shutting down in %v seconds...", c))
+			time.Sleep(1 * time.Second)
+			c--
+		}
+		logger.Debug("Closing tcp clients...")
+		TCP_SERVER.Shutdown()
+		logger.Debug("Closing database connection...")
+		DB.Close()
+		logger.Debug("Shutting down...")
+		time.Sleep(1 * time.Second)
+		os.Exit(0)
+	}()
 }
 
 func main() {
