@@ -111,23 +111,19 @@ func RunTcpServer() {
 	})
 
 	TCP_SERVER.RegisterMethod("del", func(message socket2em.Message, conn net.Conn) {
-		// {"method": "get", "data":{"key":"stefan","passphrase":"test"}}
+		// {"method": "del", "data":{"key":"stefan","passphrase":"test"}}
 		var data map[string]string
 		json.Unmarshal(message.Data, &data)
 		logger.Info(data)
 
-		// val, err := DB.Get("store", data["key"], data["passphrase"])
-
 		results := make(map[string]interface{})
-		// val, err := Get(data["key"], data["passphrase"])
+		err := DB.Remove("store", data["key"], data["passphrase"])
+		if nil != err {
+			logger.Error(err)
+			TCP_SERVER.HandleError(err, conn)
+			return
+		}
 
-		// if nil != err {
-		// 	logger.Error(err)
-		// 	TCP_SERVER.HandleError(err, conn)
-		// 	return
-		// }
-
-		results["TODO"] = true
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
