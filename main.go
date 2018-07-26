@@ -8,7 +8,7 @@ import (
 	"github.com/sjsafranek/ligneous"
 )
 
-const DEFAULT_DB_FILE = "gonotes.db"
+const DEFAULT_DB_FILE = "skeleton.db"
 
 var logger ligneous.Log
 var DB_FILE string = DEFAULT_DB_FILE
@@ -24,13 +24,14 @@ func init() {
 }
 
 func main() {
-	// source: http://patorjk.com/software/taag/#p=display&f=Graceful&t=GOJOT2
+	// source: http://patorjk.com/software/taag/#p=display&f=Slant&t=Skeleton
 	fmt.Println(`
-  ___   __     __   __  ____  ____
- / __) /  \  _(  ) /  \(_  _)(___ \
-( (_ \(  O )/ \) \(  O ) )(   / __/
- \___/ \__/ \____/ \__/ (__) (____)
-    `)
+   _____ __        __     __
+  / ___// /_____  / /__  / /_____  ____
+  \__ \/ //_/ _ \/ / _ \/ __/ __ \/ __ \
+ ___/ / ,< /  __/ /  __/ /_/ /_/ / / / /
+/____/_/|_|\___/_/\___/\__/\____/_/ /_/
+`)
 
 	DB = lib.OpenDb(DB_FILE)
 	defer DB.Close()
