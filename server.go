@@ -19,6 +19,13 @@ func init() {
 	startTime = time.Now()
 }
 
+func parseRawJsonMessage(raw json.RawMessage) map[string]string {
+	var data map[string]string
+	json.Unmarshal(raw, &data)
+	logger.Info(data)
+	return data
+}
+
 func RunTcpServer() {
 
 	TCP_SERVER = socket2em.Server{
@@ -50,12 +57,9 @@ func RunTcpServer() {
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
+	// Get keys
 	TCP_SERVER.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "keys"}
-		var data map[string]string
-		json.Unmarshal(message.Data, &data)
-		logger.Info(data)
-
 		keys, err := DB.Keys("store")
 		if nil != err {
 			logger.Error(err)
@@ -68,15 +72,7 @@ func RunTcpServer() {
 	// Set value
 	TCP_SERVER.RegisterMethod("set", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "set", "data":{"key":"stefan","value":"rocks","passphrase":"test"}}
-		var data map[string]string
-		json.Unmarshal(message.Data, &data)
-		logger.Info(data)
-
-		// err := DB.Set("store", data["key"], data["value"], data["passphrase"])
-		// if nil != err {
-		// 	logger.Error(err)
-		// }
-
+		data := parseRawJsonMessage(message.Data)
 		results := make(map[string]interface{})
 		err := Set(data["key"], data["value"], data["passphrase"])
 		if nil != err {
@@ -88,18 +84,12 @@ func RunTcpServer() {
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
-	// Get value
+	// Get key value
 	TCP_SERVER.RegisterMethod("get", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "get", "data":{"key":"stefan","passphrase":"test"}}
-		var data map[string]string
-		json.Unmarshal(message.Data, &data)
-		logger.Info(data)
-
-		// val, err := DB.Get("store", data["key"], data["passphrase"])
-
+		data := parseRawJsonMessage(message.Data)
 		results := make(map[string]interface{})
 		val, err := Get(data["key"], data["passphrase"])
-
 		if nil != err {
 			logger.Error(err)
 			TCP_SERVER.HandleError(err, conn)
@@ -110,12 +100,10 @@ func RunTcpServer() {
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
+	// Delete key
 	TCP_SERVER.RegisterMethod("del", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "del", "data":{"key":"stefan","passphrase":"test"}}
-		var data map[string]string
-		json.Unmarshal(message.Data, &data)
-		logger.Info(data)
-
+		data := parseRawJsonMessage(message.Data)
 		results := make(map[string]interface{})
 		err := DB.Remove("store", data["key"], data["passphrase"])
 		if nil != err {
