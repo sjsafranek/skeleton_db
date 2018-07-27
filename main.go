@@ -36,16 +36,16 @@ func init() {
 		sig := <-signal_queue
 		logger.Warnf("caught sig: %+v", sig)
 		logger.Warn("Gracefully shutting down...")
-		c := 10
-		for {
-			if 0 == TCP_SERVER.GetNumClients() || c == 0 {
-				break
-			}
-			logger.Debug("Waiting for clients to close")
-			TCP_SERVER.Broadcast(fmt.Sprintf("server is shutting down in %v seconds...", c))
-			time.Sleep(1 * time.Second)
-			c--
-		}
+		// c := 10
+		// for {
+		// 	if 0 == TCP_SERVER.GetNumClients() || c == 0 {
+		// 		break
+		// 	}
+		// 	logger.Debug("Waiting for clients to close")
+		// 	TCP_SERVER.Broadcast(fmt.Sprintf("server is shutting down in %v seconds...", c))
+		// 	time.Sleep(1 * time.Second)
+		// 	c--
+		// }
 		logger.Warn("Closing tcp clients...")
 		TCP_SERVER.Shutdown()
 		time.Sleep(500 * time.Millisecond)

@@ -1,0 +1,10 @@
+[Uinit]
+Description=Skeleton Database Server
+
+[Service]
+User=stefan
+ExecStart=/bin/bash -c 'cd ~/go && ./skeleton_db'
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
