@@ -153,6 +153,20 @@ func main() {
 		case strings.HasPrefix(line, "getpassphrase"):
 			log.Println(passphrase)
 
+		case strings.HasPrefix(line, "del"):
+			var key string
+
+			if 2 == len(parts) {
+				if "del" == parts[0] {
+					key = parts[1]
+					query := fmt.Sprintf(`{"method":"del","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
+					sendQuery(query)
+					continue
+				}
+			}
+			log.Println("Error! Incorrect usage")
+			log.Println("DEL <key>")
+
 		case strings.HasPrefix(line, "get"):
 			var key string
 
