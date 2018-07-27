@@ -4,9 +4,9 @@ import (
 	"github.com/sjsafranek/DiffStore"
 )
 
-func Get(key, passphrase string) (diffstore.DiffStore, error) {
+func Get(namespace, key, passphrase string) (diffstore.DiffStore, error) {
 	var ddata diffstore.DiffStore
-	data, err := DB.Get("store", key, passphrase)
+	data, err := DB.Get(namespace, key, passphrase)
 	if nil != err {
 		return ddata, err
 	}
@@ -14,8 +14,8 @@ func Get(key, passphrase string) (diffstore.DiffStore, error) {
 	return ddata, err
 }
 
-func Set(key, value, passphrase string) error {
-	ddata, err := Get(key, passphrase)
+func Set(namespace, key, value, passphrase string) error {
+	ddata, err := Get(namespace, key, passphrase)
 	if nil != err {
 		if err.Error() == "Not found" {
 			// create new diffstore if key not found in database
@@ -31,5 +31,10 @@ func Set(key, value, passphrase string) error {
 		return err
 	}
 
-	return DB.Set("store", key, string(enc), passphrase)
+	return DB.Set(namespace, key, string(enc), passphrase)
 }
+
+//
+// func Remove(key, passphrase string) error {
+// 	return DB.Remove("store", key, passphrase)
+// }

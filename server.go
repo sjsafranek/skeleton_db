@@ -15,6 +15,10 @@ var (
 	startTime  time.Time
 )
 
+const (
+	DEFAULT_NAMESPACE = "store"
+)
+
 func init() {
 	startTime = time.Now()
 }
@@ -65,12 +69,33 @@ func RunTcpServer() {
 		TCP_SERVER.SendResponseFromStruct(results, conn)
 	})
 
+	TCP_SERVER.RegisterMethod("namespaces", func(message socket2em.Message, conn net.Conn) {
+		// {"method": "namespaces"}
+		tables, err := DB.Tables()
+		if nil != err {
+			logger.Error(err)
+			TCP_SERVER.HandleError(err, conn)
+			return
+		}
+		results := make(map[string]interface{})
+		results["namespaces"] = tables
+		TCP_SERVER.SendResponseFromStruct(results, conn)
+	})
+
 	// Get keys
 	TCP_SERVER.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "keys"}
-		keys, err := DB.Keys("store")
+		data := parseRawJsonMessage(message.Data)
+		namespace := DEFAULT_NAMESPACE
+		if "" != data["namespace"] {
+			namespace = data["namespace"]
+		}
+
+		keys, err := DB.Keys(namespace)
 		if nil != err {
 			logger.Error(err)
+			TCP_SERVER.HandleError(err, conn)
+			return
 		}
 		results := make(map[string]interface{})
 		results["keys"] = keys
@@ -81,8 +106,20 @@ func RunTcpServer() {
 	TCP_SERVER.RegisterMethod("set", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "set", "data":{"key":"stefan","value":"rocks","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
+		namespace := DEFAULT_NAMESPACE
+		if "" != data["namespace"] {
+			namespace = data["namespace"]
+		}
+
+		err := DB.CreateTable(namespace)
+		if nil != err {
+			logger.Error(err)
+			TCP_SERVER.HandleError(err, conn)
+			return
+		}
+
 		results := make(map[string]interface{})
-		err := Set(data["key"], data["value"], data["passphrase"])
+		err = Set(namespace, data["key"], data["value"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
 			TCP_SERVER.HandleError(err, conn)
@@ -96,8 +133,13 @@ func RunTcpServer() {
 	TCP_SERVER.RegisterMethod("get", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "get", "data":{"key":"stefan","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
+		namespace := DEFAULT_NAMESPACE
+		if "" != data["namespace"] {
+			namespace = data["namespace"]
+		}
+
 		results := make(map[string]interface{})
-		val, err := Get(data["key"], data["passphrase"])
+		val, err := Get(namespace, data["key"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
 			TCP_SERVER.HandleError(err, conn)
@@ -112,8 +154,13 @@ func RunTcpServer() {
 	TCP_SERVER.RegisterMethod("del", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "del", "data":{"key":"stefan","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
+		namespace := DEFAULT_NAMESPACE
+		if "" != data["namespace"] {
+			namespace = data["namespace"]
+		}
+
 		results := make(map[string]interface{})
-		err := DB.Remove("store", data["key"], data["passphrase"])
+		err := DB.Remove(namespace, data["key"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
 			TCP_SERVER.HandleError(err, conn)
