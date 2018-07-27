@@ -9,18 +9,19 @@ import (
 	"github.com/sjsafranek/socket2em"
 )
 
-var (
-	TCP_SERVER socket2em.Server
-	tcp_port   int = 9622
-	startTime  time.Time
-)
-
 const (
+	DEFAULT_PORT      = 9622
 	DEFAULT_NAMESPACE = "store"
 )
 
+var (
+	TCP_SERVER socket2em.Server
+	PORT       = DEFAULT_PORT
+	// startTime  time.Time
+)
+
 func init() {
-	startTime = time.Now()
+	TCP_SERVER = NewTcpServer()
 }
 
 func parseRawJsonMessage(raw json.RawMessage) map[string]string {
@@ -30,21 +31,23 @@ func parseRawJsonMessage(raw json.RawMessage) map[string]string {
 	return data
 }
 
-func RunTcpServer() {
+func NewTcpServer() socket2em.Server {
 
-	TCP_SERVER = socket2em.Server{
+	startTime := time.Now()
+
+	server := socket2em.Server{
 		LoggingHandler: func(message string) { logger.Info(message) },
-		Port:           tcp_port,
+		Port:           PORT,
 	}
 
 	// Simple ping method
-	TCP_SERVER.RegisterMethod("ping", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("ping", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "ping"}
-		TCP_SERVER.HandleSuccess(`{"message": "pong"}`, conn)
+		server.HandleSuccess(`{"message": "pong"}`, conn)
 	})
 
 	// Returns runtime and system information
-	TCP_SERVER.RegisterMethod("get_runtime_stats", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("get_runtime_stats", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "get_runtime_stats"}
 		var ms runtime.MemStats
 		runtime.ReadMemStats(&ms)
@@ -58,18 +61,18 @@ func RunTcpServer() {
 		results["Uptime"] = time.Since(startTime).Seconds()
 		results["NumCPU"] = runtime.NumCPU()
 		results["GOOS"] = runtime.GOOS
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
 	// Returns runtime and system information
-	TCP_SERVER.RegisterMethod("num_clients", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("num_clients", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "num_clients"}
 		results := make(map[string]interface{})
 		results["num_clients"] = TCP_SERVER.GetNumClients()
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
-	TCP_SERVER.RegisterMethod("namespaces", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("namespaces", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "namespaces"}
 		tables, err := DB.Tables()
 		if nil != err {
@@ -79,11 +82,11 @@ func RunTcpServer() {
 		}
 		results := make(map[string]interface{})
 		results["namespaces"] = tables
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
 	// Get keys
-	TCP_SERVER.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "keys"}
 		data := parseRawJsonMessage(message.Data)
 		namespace := DEFAULT_NAMESPACE
@@ -99,11 +102,11 @@ func RunTcpServer() {
 		}
 		results := make(map[string]interface{})
 		results["keys"] = keys
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
 	// Set value
-	TCP_SERVER.RegisterMethod("set", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("set", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "set", "data":{"key":"stefan","value":"rocks","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
 		namespace := DEFAULT_NAMESPACE
@@ -114,7 +117,7 @@ func RunTcpServer() {
 		err := DB.CreateTable(namespace)
 		if nil != err {
 			logger.Error(err)
-			TCP_SERVER.HandleError(err, conn)
+			server.HandleError(err, conn)
 			return
 		}
 
@@ -122,15 +125,15 @@ func RunTcpServer() {
 		err = Set(namespace, data["key"], data["value"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
-			TCP_SERVER.HandleError(err, conn)
+			server.HandleError(err, conn)
 			return
 		}
 
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
 	// Get key value
-	TCP_SERVER.RegisterMethod("get", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("get", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "get", "data":{"key":"stefan","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
 		namespace := DEFAULT_NAMESPACE
@@ -142,16 +145,16 @@ func RunTcpServer() {
 		val, err := Get(namespace, data["key"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
-			TCP_SERVER.HandleError(err, conn)
+			server.HandleError(err, conn)
 			return
 		}
 
 		results["value"] = val
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
 	// Delete key
-	TCP_SERVER.RegisterMethod("del", func(message socket2em.Message, conn net.Conn) {
+	server.RegisterMethod("del", func(message socket2em.Message, conn net.Conn) {
 		// {"method": "del", "data":{"key":"stefan","passphrase":"test"}}
 		data := parseRawJsonMessage(message.Data)
 		namespace := DEFAULT_NAMESPACE
@@ -163,13 +166,13 @@ func RunTcpServer() {
 		err := DB.Remove(namespace, data["key"], data["passphrase"])
 		if nil != err {
 			logger.Error(err)
-			TCP_SERVER.HandleError(err, conn)
+			server.HandleError(err, conn)
 			return
 		}
 
-		TCP_SERVER.SendResponseFromStruct(results, conn)
+		server.SendResponseFromStruct(results, conn)
 	})
 
-	TCP_SERVER.Start()
+	return server
 
 }

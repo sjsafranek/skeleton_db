@@ -14,9 +14,11 @@ import (
 
 const DEFAULT_DB_FILE = "skeleton.db"
 
-var logger ligneous.Log
-var DB_FILE string = DEFAULT_DB_FILE
-var DB lib.Database
+var (
+	logger  ligneous.Log
+	DB_FILE string = DEFAULT_DB_FILE
+	DB      lib.Database
+)
 
 func init() {
 	// initialize logger
@@ -24,6 +26,7 @@ func init() {
 
 	// get command line args
 	flag.StringVar(&DB_FILE, "db", DEFAULT_DB_FILE, "database file")
+	flag.IntVar(&PORT, "p", DEFAULT_PORT, "port")
 	flag.Parse()
 
 	signal_queue := make(chan os.Signal)
@@ -45,11 +48,11 @@ func init() {
 		}
 		logger.Warn("Closing tcp clients...")
 		TCP_SERVER.Shutdown()
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		logger.Warn("Closing database connection...")
 		DB.Close()
 		logger.Warn("Shutting down...")
-		time.Sleep(1 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		os.Exit(0)
 	}()
 }
@@ -66,5 +69,6 @@ func main() {
 
 	DB = lib.OpenDb(DB_FILE)
 	defer DB.Close()
-	RunTcpServer()
+
+	TCP_SERVER.Start()
 }
