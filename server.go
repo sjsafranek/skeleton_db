@@ -87,7 +87,7 @@ func NewTcpServer() socket2em.Server {
 
 	// Get keys
 	server.RegisterMethod("keys", func(message socket2em.Message, conn net.Conn) {
-		// {"method": "keys"}
+		// {"method": "keys", "data":{"namespace":"test"}}
 		data := parseRawJsonMessage(message.Data)
 		namespace := DEFAULT_NAMESPACE
 		if "" != data["namespace"] {
