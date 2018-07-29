@@ -188,24 +188,24 @@ func main() {
 			var key string
 			var value string
 
-			if 3 == len(parts) {
-				if "set" == parts[0] {
-					key = parts[1]
+			// if 3 == len(parts) {
+			if "set" == parts[0] {
+				key = parts[1]
 
-					// TODO
-					// get
-					// value = line[4:]
-					i1 := strings.Index(line, "'")
-					i2 := strings.LastIndex(line, "'")
-					value = line[i1+1 : i2]
-					// value = parts[2]
-					//.end
+				// TODO
+				// get
+				// value = line[4:]
+				i1 := strings.Index(line, "'")
+				i2 := strings.LastIndex(line, "'")
+				value = line[i1+1 : i2]
+				// value = parts[2]
+				//.end
 
-					query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
-					sendQuery(query)
-					continue
-				}
+				query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
+				sendQuery(query)
+				continue
 			}
+			// }
 			log.Println("Error! Incorrect usage")
 			log.Println("SET <key> <value>")
 
