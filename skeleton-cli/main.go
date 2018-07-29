@@ -5,12 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	// "io/ioutil"
 	"log"
-	// "strconv"
-	"strings"
-	// "time"
 	"net"
+	"strings"
+
+	// "strconv"
 
 	"github.com/chzyer/readline"
 )
@@ -36,18 +35,6 @@ func usage(w io.Writer) {
 }
 
 var completer = readline.NewPrefixCompleter(
-	// readline.PcItem("mode",
-	// 	readline.PcItem("vi"),
-	// 	readline.PcItem("emacs"),
-	// ),
-	// readline.PcItem("login"),
-	// readline.PcItem("say",
-	// 	readline.PcItemDynamic(listFiles("./"),
-	// 		readline.PcItem("with",
-	// 			readline.PcItem("following"),
-	// 			readline.PcItem("items"),
-	// 		),
-	// 	),
 	readline.PcItem("KEYS"),
 	readline.PcItem("NAMESPACES"),
 	readline.PcItem("SET"),
@@ -127,7 +114,15 @@ func main() {
 		line = strings.TrimSpace(line)
 		line = strings.ToLower(line)
 		parts := strings.Split(line, " ")
-		// log.Println(parts)
+
+		// testing
+		setPasswordCfg := l.GenPasswordConfig()
+		setPasswordCfg.SetListener(func(line []rune, pos int, key rune) (newLine []rune, newPos int, ok bool) {
+			l.SetPrompt(fmt.Sprintf("Enter password(%v): ", len(line)))
+			l.Refresh()
+			return nil, 0, false
+		})
+		//.end
 
 		switch {
 
@@ -140,12 +135,20 @@ func main() {
 			log.Println("SETNAMESPACE <namespace>")
 
 		case strings.HasPrefix(line, "setpassphrase"):
-			if 2 == len(parts) {
-				passphrase = parts[1]
-				continue
+
+			// testing
+			pswd, err := l.ReadPasswordWithConfig(setPasswordCfg)
+			if err == nil {
+				passphrase = string(pswd)
 			}
-			log.Println("Error! Incorrect usage")
-			log.Println("SETPASSPHRASE <passphrase>")
+			//.end
+
+			// if 2 == len(parts) {
+			// 	passphrase = parts[1]
+			// 	continue
+			// }
+			// log.Println("Error! Incorrect usage")
+			// log.Println("SETPASSPHRASE <passphrase>")
 
 		case strings.HasPrefix(line, "getnamespace"):
 			log.Println(namespace)
