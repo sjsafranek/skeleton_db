@@ -10,14 +10,17 @@ import (
 )
 
 const (
-	DEFAULT_PORT      = 9622
+	// DEFAULT_PORT default tcp port
+	DEFAULT_PORT = 9622
+	// DEFAULT_NAMESPACE default bucket name for database
 	DEFAULT_NAMESPACE = "store"
 )
 
 var (
+	// TCP_SERVER tcp server
 	TCP_SERVER socket2em.Server
-	PORT       = DEFAULT_PORT
-	// startTime  time.Time
+	// PORT port to listen to
+	PORT = DEFAULT_PORT
 )
 
 func init() {
@@ -31,6 +34,7 @@ func parseRawJsonMessage(raw json.RawMessage) map[string]string {
 	return data
 }
 
+// NewTcpServer creates and returns socket2em.Server tcp server
 func NewTcpServer() socket2em.Server {
 
 	startTime := time.Now()
