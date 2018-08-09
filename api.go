@@ -11,6 +11,7 @@ func Get(namespace, key, passphrase string) (diffstore.DiffStore, error) {
 		return ddata, err
 	}
 	ddata.Decode([]byte(data))
+
 	return ddata, err
 }
 

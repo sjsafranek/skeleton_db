@@ -8,7 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sjsafranek/gopass/lib"
+	// "github.com/sjsafranek/gopass/lib"
+	"github.com/sjsafranek/crypt_bolt"
 	"github.com/sjsafranek/ligneous"
 )
 
@@ -17,7 +18,7 @@ const DEFAULT_DB_FILE = "skeleton.db"
 var (
 	logger  ligneous.Log
 	DB_FILE string = DEFAULT_DB_FILE
-	DB      lib.Database
+	DB      crypt_bolt.Database
 )
 
 func init() {
@@ -67,7 +68,7 @@ func main() {
 /____/_/|_|\___/_/\___/\__/\____/_/ /_/
 `)
 
-	DB = lib.OpenDb(DB_FILE)
+	DB = crypt_bolt.OpenDb(DB_FILE)
 	defer DB.Close()
 
 	TCP_SERVER.Start()
