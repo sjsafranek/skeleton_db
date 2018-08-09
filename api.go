@@ -4,6 +4,7 @@ import (
 	"github.com/sjsafranek/DiffStore"
 )
 
+// Get gets value by key and bucket. Decrypts value using passphrase.
 func Get(namespace, key, passphrase string) (diffstore.DiffStore, error) {
 	var ddata diffstore.DiffStore
 	data, err := DB.Get(namespace, key, passphrase)
@@ -15,6 +16,7 @@ func Get(namespace, key, passphrase string) (diffstore.DiffStore, error) {
 	return ddata, err
 }
 
+// Set sets value by key and bucket. Encrypts value using passphrase.
 func Set(namespace, key, value, passphrase string) error {
 	ddata, err := Get(namespace, key, passphrase)
 	if nil != err {

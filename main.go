@@ -8,17 +8,19 @@ import (
 	"syscall"
 	"time"
 
-	// "github.com/sjsafranek/gopass/lib"
 	"github.com/sjsafranek/crypt_bolt"
 	"github.com/sjsafranek/ligneous"
 )
 
+// DEFAULT_DB_FILE DEFAULT_PORTlt database file
 const DEFAULT_DB_FILE = "skeleton.db"
 
 var (
-	logger  ligneous.Log
+	logger ligneous.Log
+	// DB_FILE database file to use
 	DB_FILE string = DEFAULT_DB_FILE
-	DB      crypt_bolt.Database
+	// DB database manager
+	DB crypt_bolt.Database
 )
 
 func init() {
