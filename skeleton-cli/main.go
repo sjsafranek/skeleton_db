@@ -153,17 +153,17 @@ func main() {
 			var key string
 
 			if 2 == len(parts) {
-				if "del" == parts[0] {
-					key = parts[1]
-					result, err := client.Del(key, passphrase)
-					if nil != err {
-						log.Println(err)
-						continue
-					}
-					// log.Println(result)
-					fmt.Println(result)
+				// if "del" == parts[0] {
+				key = parts[1]
+				result, err := client.Del(key, passphrase)
+				if nil != err {
+					log.Println(err)
 					continue
 				}
+				// log.Println(result)
+				fmt.Println(result)
+				continue
+				// }
 			}
 			log.Println("Error! Incorrect usage")
 			log.Println("DEL <key>")
