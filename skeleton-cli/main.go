@@ -98,9 +98,8 @@ func main() {
 	defer l.Close()
 
 	client := ApiClient{ClientEncryption: true}
-	var namespace string
+	// var namespace string
 	var passphrase string
-	// var client_encryption bool = true
 
 	log.SetOutput(l.Stderr())
 	for {
@@ -145,8 +144,7 @@ func main() {
 
 		case strings.HasPrefix(command, "setnamespace"):
 			if 2 == len(parts) {
-				namespace = parts[1]
-				client.Namespace = namespace
+				client.Namespace = parts[1]
 				continue
 			}
 			log.Println("Error! Incorrect usage")
@@ -159,7 +157,6 @@ func main() {
 			}
 
 		case strings.HasPrefix(command, "getnamespace"):
-			// log.Println(namespace)
 			log.Println(client.Namespace)
 
 		case strings.HasPrefix(command, "getpassphrase"):
@@ -171,7 +168,7 @@ func main() {
 			if 2 == len(parts) {
 				if "del" == parts[0] {
 					key = parts[1]
-					query := fmt.Sprintf(`{"method":"del","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
+					query := fmt.Sprintf(`{"method":"del","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, client.Namespace, passphrase)
 					log.Println(sendQuery(query))
 					continue
 				}
@@ -183,7 +180,7 @@ func main() {
 			var key string
 
 			if 2 == len(parts) {
-				if "get" == parts[0] {
+				if "get" == command {
 					key = parts[1]
 					// query := fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
 					// log.Println(sendQuery(query))
@@ -204,7 +201,7 @@ func main() {
 			var key string
 			var value string
 
-			if "set" == parts[0] {
+			if "set" == command {
 				key = parts[1]
 
 				i1 := strings.Index(line, "'")
@@ -230,7 +227,7 @@ func main() {
 			usage(l.Stderr())
 
 		case strings.HasPrefix(command, "keys"):
-			query := fmt.Sprintf(`{"method": "keys", "data":{"namespace":"%v"}}`, namespace)
+			query := fmt.Sprintf(`{"method": "keys", "data":{"namespace":"%v"}}`, client.Namespace)
 			log.Println(sendQuery(query))
 
 		case strings.HasPrefix(command, "namespaces"):
