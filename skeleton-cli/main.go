@@ -59,18 +59,19 @@ func filterInput(r rune) (rune, bool) {
 	return r, true
 }
 
-func readResponse() {
+func readResponse() string {
 	status, err := bufio.NewReader(DB_CONN).ReadString('\n')
 	if nil != err {
 		log.Fatal(err)
 	}
-	log.Println(status)
+	// log.Println(status)
+	return status
 }
 
-func sendQuery(query string) {
+func sendQuery(query string) string {
 	payload := fmt.Sprintf("%v\r\n", query)
 	fmt.Fprintf(DB_CONN, payload)
-	readResponse()
+	return readResponse()
 }
 
 func main() {
@@ -96,9 +97,10 @@ func main() {
 	}
 	defer l.Close()
 
+	client := ApiClient{ClientEncryption: true}
 	var namespace string
 	var passphrase string
-	var client_encryption bool = true
+	// var client_encryption bool = true
 
 	log.SetOutput(l.Stderr())
 	for {
@@ -114,7 +116,6 @@ func main() {
 		}
 
 		line = strings.TrimSpace(line)
-		// line = strings.ToLower(line)
 		parts := strings.Split(line, " ")
 		command := strings.ToLower(parts[0])
 
@@ -133,18 +134,19 @@ func main() {
 			if 2 == len(parts) {
 				boolean := parts[1]
 				if "on" == strings.ToLower(boolean) {
-					client_encryption = true
+					client.ClientEncryption = true
 				} else if "off" == strings.ToLower(boolean) {
-					client_encryption = false
+					client.ClientEncryption = false
 				}
 				continue
 			}
 			log.Println("Error! Incorrect usage")
-			log.Println("SETNAMESPACE <namespace>")
+			log.Println("SETCLIENTENCRYPTION <on||off>")
 
 		case strings.HasPrefix(command, "setnamespace"):
 			if 2 == len(parts) {
 				namespace = parts[1]
+				client.Namespace = namespace
 				continue
 			}
 			log.Println("Error! Incorrect usage")
@@ -157,7 +159,8 @@ func main() {
 			}
 
 		case strings.HasPrefix(command, "getnamespace"):
-			log.Println(namespace)
+			// log.Println(namespace)
+			log.Println(client.Namespace)
 
 		case strings.HasPrefix(command, "getpassphrase"):
 			log.Println(passphrase)
@@ -169,7 +172,7 @@ func main() {
 				if "del" == parts[0] {
 					key = parts[1]
 					query := fmt.Sprintf(`{"method":"del","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
-					sendQuery(query)
+					log.Println(sendQuery(query))
 					continue
 				}
 			}
@@ -182,8 +185,15 @@ func main() {
 			if 2 == len(parts) {
 				if "get" == parts[0] {
 					key = parts[1]
-					query := fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
-					sendQuery(query)
+					// query := fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
+					// log.Println(sendQuery(query))
+					// results := sendQuery(query)
+					value, err := client.Get(key, passphrase)
+					if nil != err {
+						log.Println(err)
+						continue
+					}
+					log.Println(value)
 					continue
 				}
 			}
@@ -201,12 +211,15 @@ func main() {
 				i2 := strings.LastIndex(line, "'")
 				value = line[i1+1 : i2]
 
-				if client_encryption {
-					fmt.Println(client_encryption)
+				// query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
+				// log.Println(sendQuery(query))
+				status, err := client.Set(key, value, passphrase)
+				if nil != err {
+					log.Println(err)
+					continue
 				}
+				log.Println(status)
 
-				query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
-				sendQuery(query)
 				continue
 			}
 
@@ -218,11 +231,11 @@ func main() {
 
 		case strings.HasPrefix(command, "keys"):
 			query := fmt.Sprintf(`{"method": "keys", "data":{"namespace":"%v"}}`, namespace)
-			sendQuery(query)
+			log.Println(sendQuery(query))
 
 		case strings.HasPrefix(command, "namespaces"):
 			query := `{"method": "namespaces"}`
-			sendQuery(query)
+			log.Println(sendQuery(query))
 
 		case command == "bye":
 			goto exit
