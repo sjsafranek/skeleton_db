@@ -47,6 +47,7 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("SETPASSPHRASE"),
 	readline.PcItem("GETNAMESPACE"),
 	readline.PcItem("GETPASSPHRASE"),
+	readline.PcItem("SETCLIENTENCRYPTION"),
 )
 
 func filterInput(r rune) (rune, bool) {
@@ -97,6 +98,7 @@ func main() {
 
 	var namespace string
 	var passphrase string
+	var client_encryption bool = true
 
 	log.SetOutput(l.Stderr())
 	for {
@@ -112,8 +114,9 @@ func main() {
 		}
 
 		line = strings.TrimSpace(line)
-		line = strings.ToLower(line)
+		// line = strings.ToLower(line)
 		parts := strings.Split(line, " ")
+		command := strings.ToLower(parts[0])
 
 		// testing
 		setPasswordCfg := l.GenPasswordConfig()
@@ -126,7 +129,20 @@ func main() {
 
 		switch {
 
-		case strings.HasPrefix(line, "setnamespace"):
+		case strings.HasPrefix(command, "setclientencryption"):
+			if 2 == len(parts) {
+				boolean := parts[1]
+				if "on" == strings.ToLower(boolean) {
+					client_encryption = true
+				} else if "off" == strings.ToLower(boolean) {
+					client_encryption = false
+				}
+				continue
+			}
+			log.Println("Error! Incorrect usage")
+			log.Println("SETNAMESPACE <namespace>")
+
+		case strings.HasPrefix(command, "setnamespace"):
 			if 2 == len(parts) {
 				namespace = parts[1]
 				continue
@@ -134,29 +150,19 @@ func main() {
 			log.Println("Error! Incorrect usage")
 			log.Println("SETNAMESPACE <namespace>")
 
-		case strings.HasPrefix(line, "setpassphrase"):
-
-			// testing
+		case strings.HasPrefix(command, "setpassphrase"):
 			pswd, err := l.ReadPasswordWithConfig(setPasswordCfg)
 			if err == nil {
 				passphrase = string(pswd)
 			}
-			//.end
 
-			// if 2 == len(parts) {
-			// 	passphrase = parts[1]
-			// 	continue
-			// }
-			// log.Println("Error! Incorrect usage")
-			// log.Println("SETPASSPHRASE <passphrase>")
-
-		case strings.HasPrefix(line, "getnamespace"):
+		case strings.HasPrefix(command, "getnamespace"):
 			log.Println(namespace)
 
-		case strings.HasPrefix(line, "getpassphrase"):
+		case strings.HasPrefix(command, "getpassphrase"):
 			log.Println(passphrase)
 
-		case strings.HasPrefix(line, "del"):
+		case strings.HasPrefix(command, "del"):
 			var key string
 
 			if 2 == len(parts) {
@@ -170,7 +176,7 @@ func main() {
 			log.Println("Error! Incorrect usage")
 			log.Println("DEL <key>")
 
-		case strings.HasPrefix(line, "get"):
+		case strings.HasPrefix(command, "get"):
 			var key string
 
 			if 2 == len(parts) {
@@ -184,43 +190,47 @@ func main() {
 			log.Println("Error! Incorrect usage")
 			log.Println("GET <key>")
 
-		case strings.HasPrefix(line, "set"):
+		case strings.HasPrefix(command, "set"):
 			var key string
 			var value string
 
-			// if 3 == len(parts) {
 			if "set" == parts[0] {
 				key = parts[1]
 
-				// TODO
-				// get
-				// value = line[4:]
 				i1 := strings.Index(line, "'")
 				i2 := strings.LastIndex(line, "'")
 				value = line[i1+1 : i2]
-				// value = parts[2]
-				//.end
+
+				if client_encryption {
+					fmt.Println(client_encryption)
+				}
 
 				query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
 				sendQuery(query)
 				continue
 			}
-			// }
+
 			log.Println("Error! Incorrect usage")
 			log.Println("SET <key> <value>")
 
-		case line == "help":
+		case command == "help":
 			usage(l.Stderr())
 
-		case strings.HasPrefix(line, "keys"):
+		case strings.HasPrefix(command, "keys"):
 			query := fmt.Sprintf(`{"method": "keys", "data":{"namespace":"%v"}}`, namespace)
 			sendQuery(query)
 
-		case strings.HasPrefix(line, "namespaces"):
+		case strings.HasPrefix(command, "namespaces"):
 			query := `{"method": "namespaces"}`
 			sendQuery(query)
 
-		case line == "bye":
+		case command == "bye":
+			goto exit
+
+		case command == "exit":
+			goto exit
+
+		case command == "quit":
 			goto exit
 
 		case line == "":
