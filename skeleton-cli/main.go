@@ -1,15 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"strings"
-
-	// "strconv"
 
 	"github.com/chzyer/readline"
 )
@@ -20,7 +16,6 @@ const (
 
 var (
 	DATABASE_SERVER_ADDRESS = DEFAULT_DATABASE_SERVER_ADDRESS
-	DB_CONN                 net.Conn
 )
 
 func init() {
@@ -48,6 +43,8 @@ var completer = readline.NewPrefixCompleter(
 	readline.PcItem("GETNAMESPACE"),
 	readline.PcItem("GETPASSPHRASE"),
 	readline.PcItem("SETCLIENTENCRYPTION"),
+	readline.PcItem("CONNECT"),
+	readline.PcItem("DISCONNECT"),
 )
 
 func filterInput(r rune) (rune, bool) {
@@ -59,29 +56,7 @@ func filterInput(r rune) (rune, bool) {
 	return r, true
 }
 
-func readResponse() string {
-	status, err := bufio.NewReader(DB_CONN).ReadString('\n')
-	if nil != err {
-		log.Fatal(err)
-	}
-	// log.Println(status)
-	return status
-}
-
-func sendQuery(query string) string {
-	payload := fmt.Sprintf("%v\r\n", query)
-	fmt.Fprintf(DB_CONN, payload)
-	return readResponse()
-}
-
 func main() {
-	conn, err := net.Dial("tcp", DATABASE_SERVER_ADDRESS)
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	DB_CONN = conn
-	defer DB_CONN.Close()
 
 	l, err := readline.NewEx(&readline.Config{
 		Prompt:              "\033[31m[skeleton]#\033[0m ",
@@ -97,8 +72,10 @@ func main() {
 	}
 	defer l.Close()
 
-	client := ApiClient{ClientEncryption: true}
-	// var namespace string
+	client := ApiClient{ClientEncryption: false}
+	client.Connect(DATABASE_SERVER_ADDRESS)
+	defer client.Disconnect()
+
 	var passphrase string
 
 	log.SetOutput(l.Stderr())
@@ -128,6 +105,16 @@ func main() {
 		//.end
 
 		switch {
+
+		case strings.HasPrefix(command, "connect"):
+			address := parts[1]
+			err := client.Connect(address)
+			if nil != err {
+				log.Println(err)
+			}
+
+		case strings.HasPrefix(command, "disconnect"):
+			client.Disconnect()
 
 		case strings.HasPrefix(command, "setclientencryption"):
 			if 2 == len(parts) {
@@ -168,8 +155,13 @@ func main() {
 			if 2 == len(parts) {
 				if "del" == parts[0] {
 					key = parts[1]
-					query := fmt.Sprintf(`{"method":"del","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, client.Namespace, passphrase)
-					log.Println(sendQuery(query))
+					result, err := client.Del(key, passphrase)
+					if nil != err {
+						log.Println(err)
+						continue
+					}
+					// log.Println(result)
+					fmt.Println(result)
 					continue
 				}
 			}
@@ -182,15 +174,13 @@ func main() {
 			if 2 == len(parts) {
 				if "get" == command {
 					key = parts[1]
-					// query := fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, namespace, passphrase)
-					// log.Println(sendQuery(query))
-					// results := sendQuery(query)
 					value, err := client.Get(key, passphrase)
 					if nil != err {
 						log.Println(err)
 						continue
 					}
-					log.Println(value)
+					// log.Println(value)
+					fmt.Println(value)
 					continue
 				}
 			}
@@ -208,15 +198,13 @@ func main() {
 				i2 := strings.LastIndex(line, "'")
 				value = line[i1+1 : i2]
 
-				// query := fmt.Sprintf(`{"method":"set","data":{"key":"%v","value":"%v","namespace":"%v","passphrase":"%v"}}`, key, value, namespace, passphrase)
-				// log.Println(sendQuery(query))
 				status, err := client.Set(key, value, passphrase)
 				if nil != err {
 					log.Println(err)
 					continue
 				}
-				log.Println(status)
-
+				// log.Println(status)
+				fmt.Println(status)
 				continue
 			}
 
@@ -227,12 +215,26 @@ func main() {
 			usage(l.Stderr())
 
 		case strings.HasPrefix(command, "keys"):
-			query := fmt.Sprintf(`{"method": "keys", "data":{"namespace":"%v"}}`, client.Namespace)
-			log.Println(sendQuery(query))
+			results, err := client.Keys()
+			if nil != err {
+				log.Println(err)
+				continue
+			}
+
+			for i := 0; i < len(results); i++ {
+				fmt.Printf("%v) %v\n", i, results[i])
+			}
 
 		case strings.HasPrefix(command, "namespaces"):
-			query := `{"method": "namespaces"}`
-			log.Println(sendQuery(query))
+			results, err := client.Namespaces()
+			if nil != err {
+				log.Println(err)
+				continue
+			}
+
+			for i := 0; i < len(results); i++ {
+				fmt.Printf("%v) %v\n", i+1, results[i])
+			}
 
 		case command == "bye":
 			goto exit

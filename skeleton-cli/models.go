@@ -7,7 +7,9 @@ type ApiResponse struct {
 }
 
 type ApiResponseData struct {
-	Value ApiResponseValue `json:"value"`
+	Keys       []string         `json:"keys"`
+	Namespaces []string         `json:"namespaces"`
+	Value      ApiResponseValue `json:"value"`
 }
 
 type ApiResponseValue struct {
