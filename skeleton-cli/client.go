@@ -15,7 +15,12 @@ type ApiClient struct {
 }
 
 func (self *ApiClient) Get(key, passphrase string) (string, error) {
-	query := fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, self.Namespace, passphrase)
+	var query string
+	if self.ClientEncryption {
+		query = fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, self.Namespace, "")
+	} else {
+		query = fmt.Sprintf(`{"method":"get","data":{"key":"%v","namespace":"%v","passphrase":"%v"}}`, key, self.Namespace, passphrase)
+	}
 	results := sendQuery(query)
 	response, err := self.parseResponse(results)
 	if nil != err {
