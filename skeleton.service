@@ -1,4 +1,4 @@
-[Uinit]
+[Unit]
 Description=Skeleton Database Server
 
 [Service]

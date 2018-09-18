@@ -14,6 +14,8 @@ const (
 	DEFAULT_PORT = 9622
 	// DEFAULT_NAMESPACE default bucket name for database
 	DEFAULT_NAMESPACE = "store"
+	//
+	DEFAULT_HOST = "0.0.0.0"
 )
 
 var (
@@ -21,6 +23,8 @@ var (
 	TCP_SERVER socket2em.Server
 	// PORT port to listen to
 	PORT = DEFAULT_PORT
+	//
+	HOST = DEFAULT_HOST
 )
 
 func init() {
@@ -42,6 +46,7 @@ func NewTcpServer() socket2em.Server {
 	server := socket2em.Server{
 		LoggingHandler: func(message string) { logger.Info(message) },
 		Port:           PORT,
+		Host:           HOST,
 	}
 
 	// Simple ping method
